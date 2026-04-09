@@ -1,6 +1,6 @@
 ' Demo1.dmc - Basic motor spin test
 ' Hardware: DMC-4143 -> DPRALTE-020B080 -> AKM21G
-' Axis A, analog MCMD output (0-10V to drive)
+' Axis C, analog MCMD output (0-10V to drive)
 
 SH C        ' Servo Here: enable axis C
 SP 10000    ' Speed: 10000 counts/sec
