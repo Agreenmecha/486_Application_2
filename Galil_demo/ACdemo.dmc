@@ -1,0 +1,22 @@
+' Demo1.dmc - Motor test with safety stop switch
+' Axis C, DMC-4143 system
+
+ST C        ' Safety stop axis before start
+DP 0        ' Zero position reference
+
+SH C        ' Enable axis C
+SP 10000    ' Speed
+AC 10000    ' Acceleration
+DC 10000    ' Deceleration
+
+PR 100000   ' Move relative position
+BG C        ' Start motion
+
+#MONITOR
+JP #STOP, @IN[1]=1   ' If switch pressed (IN1 = 1), stop motor
+JP #MONITOR          ' Keep checking
+
+#STOP
+ST C                 ' Stop motion immediately
+MO C                 ' Turn motor off
+EN                   ' End program
