@@ -1,0 +1,27 @@
+' DEMO 3.9 - Stage axis accuracy
+' Stage: 6mm/rev, 8192 cpr => 0.7324 um/count
+' Commanded 1 full rev = 8192 counts = 6.000 mm
+' Measure with dial indicator or digital caliper
+' Compare _DPC to commanded
+
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+LDC=3
+ACC=500000
+DCC=500000
+SPC=40000
+DPC=0
+
+PRC=8192
+BG C
+AM C
+
+MG "Commanded=8192 cnts (6.0mm)  Actual=",_DPC
+
+MO C
+EN

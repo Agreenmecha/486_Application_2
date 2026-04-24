@@ -1,0 +1,26 @@
+' DEMO 2.5 - Roller axis accuracy
+' Roller 1.5in dia, circumference = 4.712in
+' Commanded 1 full rev = 8192 counts = 4.712in linear on roller surface
+' Mark a line on the roller, run move, measure with caliper
+' Compare _DPA (actual encoder position) to commanded
+
+#main
+MO A
+SH A
+KPA=10
+KDA=64
+KIA=0
+LDA=3
+ACA=2000000
+DCA=2000000
+SPC=40000
+DPA=0
+
+PRA=8192
+BG A
+AM A
+
+MG "Commanded=8192  Actual=",_DPA
+
+MO A
+EN

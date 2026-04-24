@@ -1,0 +1,32 @@
+' TEST STEP 4: Jog C until torque threshold reached
+' Empirical cal: TQLIM=0.72V => ~10lb @ JGC=200 (tuned)
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+SPC=8192
+ACC=8192
+DCC=8192
+TKC=7
+TLC=9.99
+TQLIM=0.72
+
+JGC=-100
+BG C
+#WAITPK
+
+JP #WAITPK,@ABS[_TTC]<TQLIM
+
+ST C
+AM C
+
+' Torque reached - move 1 rev positive (8192 counts/rev)
+PRC=1000
+BGC
+AMC
+
+MO C
+EN

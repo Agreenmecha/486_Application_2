@@ -1,0 +1,23 @@
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+DPC=0
+' Jog negative until reverse limit trips
+SPC=2000
+JGC=-2000
+BG C
+AM C
+
+' Back off 200 counts from limit
+PR ,,200
+BG C
+AM C
+
+DPC=0          ; define home = position 0
+
+MO C
+EN

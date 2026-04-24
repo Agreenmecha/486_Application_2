@@ -1,0 +1,21 @@
+' TEST STEP 2: Unroll 4.5in then decel 0.25in after registration (DI1)
+' JGA=80000, DCA=JGA^2/(2*435) = 7356322 gives exactly 0.25in decel
+
+#main
+MO A
+SH A
+KPA=10
+KDA=64
+KIA=0
+LDA=3
+ACA=3000000
+DCA=7356322
+JGA=80000
+BG A
+#WAITA
+JP #WAITA,@IN[1]=1
+ST A
+AM A
+
+MO A
+EN

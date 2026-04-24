@@ -1,0 +1,56 @@
+' DEMO 3.10 - Actual vs theoretical resolution
+' Theoretical: 6mm/rev / 8192 cpr = 0.7324 um/count
+' Series of small moves with dwell for dial indicator readings
+' 1000 cnts = 732 um (easy)
+' 100 cnts  = 73 um  (visible on dial)
+' 10 cnts   = 7.3 um (small but readable)
+' 1 cnt     = 0.73 um (at/below typical dial indicator resolution)
+
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+LDC=3
+ACC=500000
+DCC=500000
+SPC=40000
+DPC=0
+
+MG "Test 1: 1000 cnt move (732 um)"
+PRC=1000
+BG C
+AM C
+MG "Pos=",_DPC
+WT 5000
+
+MG "Test 2: 100 cnt move (73 um)"
+PRC=100
+BG C
+AM C
+MG "Pos=",_DPC
+WT 5000
+
+MG "Test 3: 10 cnt move (7.3 um)"
+PRC=10
+BG C
+AM C
+MG "Pos=",_DPC
+WT 5000
+
+MG "Test 4: 1 cnt move (0.73 um)"
+PRC=1
+BG C
+AM C
+MG "Pos=",_DPC
+WT 5000
+
+MG "Returning to start"
+PAC=0
+BG C
+AM C
+
+MO C
+EN

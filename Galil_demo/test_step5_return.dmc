@@ -1,0 +1,20 @@
+' TEST STEP 5: Return Axis C to home (position 0)
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+SPC=8000
+ACC=8000
+DCC=8000
+
+
+PAC=0
+BG C
+AM C
+
+
+MO C
+EN

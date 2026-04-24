@@ -1,0 +1,43 @@
+' DEMO 3.7 - Limits operational
+' Jogs C to reverse limit (RLS), pauses, then jogs to forward limit (FLS)
+' CN 1 = limits active high
+
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+DPC=0
+SPC=8000
+ACC=8000
+DCC=8000
+
+#LOOP
+
+' Hit reverse limit (RLS) - jog negative (toward home/top)
+JGC=-8000
+BG C
+AM C
+WT 2000
+
+' Back off RLS
+PR ,,500
+BG C
+AM C
+
+' Hit forward limit (FLS) - jog positive (toward material/bottom)
+JGC=8000
+BG C
+AM C
+WT 2000
+
+' Back off FLS
+PR ,,-500
+BG C
+AM C
+
+JP #LOOP
+
+EN

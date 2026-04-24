@@ -1,0 +1,86 @@
+' FULL SEQUENCE - Sealing/cutting machine
+' Axis C: linear stage, 6mm/rev, 8192 cpr (34680 cnts/in, 1365 cnts/mm)
+' Axis A: roller, 1.5in dia, 8192 cpr (1738 cnts/in)
+
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+DPC=0
+SPC=2000
+ACC=8000
+DCC=8000
+TKC=9.99
+TLC=9.99
+TQLIM=0.72
+
+' STEP 1: Home C
+PR ,,2000
+BG C
+AM C
+JGC=-2000
+BG C
+AM C
+PR ,,200
+BG C
+AM C
+DPC=0
+
+' Fast speeds for normal C operation
+' Reduced from 20M to 2M to eliminate overshoot on seal/retract
+SPC=546000
+ACC=2000000
+DCC=2000000
+
+' ================================================================
+#LOOP
+
+' STEP 2: Unroll 4.5in then decel 0.25in after registration (DI1)
+' JGA=80000, DCA=JGA^2/(2*435) = 7356322 gives exactly 0.25in decel
+MO A
+SH A
+KPA=10
+KDA=64
+KIA=0
+LDA=3
+ACA=3000000
+DCA=7356322
+JGA=80000
+BG A
+#WAITA
+JP #WAITA,@IN[1]=1
+ST A
+AM A
+
+' STEP 3: Seal - move down to 2in-0.14mm (69168 counts)
+PRC=69168
+BG C
+AM C
+
+' Heat 0.5 sec
+WT 500
+
+' STEP 4: Cut 0.14mm at ~0.15s with force capped at 10lb via TLC
+ACC=35000
+DCC=35000
+SPC=5000
+TLC=0.72
+PRC=191
+BG C
+AM C
+TLC=9.99
+ACC=2000000
+DCC=2000000
+SPC=546000
+
+' STEP 5: Retract to home
+PAC=0
+BG C
+AM C
+
+JP #LOOP
+
+EN

@@ -1,0 +1,20 @@
+' TEST STEP 3: Axis C moves +3 revolutions (24576 counts) from current position
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+SPC=8000
+ACC=8000
+DCC=8000
+
+
+PR ,,24576
+BG C
+AM C
+
+WT 2000
+MO C
+EN

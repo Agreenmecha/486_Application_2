@@ -1,0 +1,40 @@
+' COMMUTATION CHECK - Axis A
+' Jog motor, press switch to stop and disable (change wires)
+' Press switch again to re-enable and jog again
+' Loop until manually stopped
+
+#main
+MO A
+SH A
+KPA=10
+KDA=64
+KIA=0
+LDA=3
+ACA=15625
+DCA=15625
+
+#LOOP
+
+' Jog A
+JGA=8000
+BG A
+
+' Wait for switch press (DI1 goes low) 2048 counts, 1.17 inches 
+#WAIT1
+JP #WAIT1,@IN[1]=1
+ST A
+AM A
+
+' Disable motor - change wires now
+MO A
+
+' Wait for switch press again to continue
+#WAIT2
+JP #WAIT2,@IN[1]=1
+
+' Re-enable and loop
+SH A
+
+JP #LOOP
+
+EN

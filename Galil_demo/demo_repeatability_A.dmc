@@ -1,0 +1,37 @@
+' DEMO 2.6 - Roller axis repeatability
+' Runs 5 back-and-forth moves of 8192 counts each
+' After each forward move, 3 sec dwell for measurement
+' Mark the roller and measure landing position each cycle
+' Record scatter to quantify repeatability
+
+#main
+MO A
+SH A
+KPA=10
+KDA=64
+KIA=0
+LDA=3
+ACA=2000000
+DCA=2000000
+SPC=40000
+DPA=0
+
+count=0
+#LOOP
+PRA=8192
+BG A
+AM A
+MG "Fwd ",count,"  Pos=",_DPA
+WT 3000
+
+PRA=-8192
+BG A
+AM A
+MG "Rev ",count,"  Pos=",_DPA
+WT 2000
+
+count=count+1
+JP #LOOP,count<5
+
+MO A
+EN
