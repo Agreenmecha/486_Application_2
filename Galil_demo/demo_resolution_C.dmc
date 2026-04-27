@@ -1,53 +1,150 @@
-' DEMO 3.10 - Actual vs theoretical resolution
-' Theoretical: 6mm/rev / 8192 cpr = 0.7324 um/count
-' Series of small moves with dwell for dial indicator readings
-' 1000 cnts = 732 um (easy)
-' 100 cnts  = 73 um  (visible on dial)
-' 10 cnts   = 7.3 um (small but readable)
-' 1 cnt     = 0.73 um (at/below typical dial indicator resolution)
+' DEMO 3.10 - Actual vs theoretical resolution (full sequence)
+' Stage: KR3306A 6mm lead, 8192 cnts/rev => 0.7324 um/count theoretical
+' Test position: 200 mm from home = 273066 cnts
+'
+' This script:
+'   1) Homes against negative limit, backs off 200 cnts, DPC=0
+'   2) Moves to test position (200 mm from home)
+'   3) Pauses 30 s for DTI mount + preload
+'   4) Backlash takeup (3x +/-1000 cnt cycles), redefines DPC=0
+'   5) Pauses 30 s for DTI zeroing (set DTI to 0 at mid-range)
+'   6) Step sequence: 10x 1-cnt, 5, 14, 25, 50, 100 cnt single steps
+'   7) Returns to zero
+'
+' DTI mounting:
+'   - On + side of carriage, probe contacting carriage flat
+'   - DTI range = +/-200 um. Preload exactly mid-range (DTI reads 0)
+'   - + commanded move => carriage pushes into DTI => reading increases
+'
+' Cumulative DTI position after each step (theoretical):
+'   step          delta um    cumulative um
+'   10x 1 cnt       0.73         7.32
+'   1x  5 cnt       3.66        10.99
+'   1x 14 cnt      10.25        21.24
+'   1x 25 cnt      18.31        39.55
+'   1x 50 cnt      36.62        76.18
+'   1x 100 cnt     73.24       149.42
+'   final position is +149 um, well within +/-200 um DTI range
+'
+' Questions to answer:
+'   a) Does _TPC change by the commanded amount?  -> servo resolution
+'   b) Does DTI deflect by ~commanded * 0.7324 um? -> mechanical resolution
+'   c) Smallest step with consistent visible deflection = practical resolution
 
 #main
 MO C
 CN 1
 SH C
-KPC=10
-KDC=64
-KIC=0
-LDC=3
-ACC=500000
-DCC=500000
-SPC=40000
-DPC=0
+KPC=20
+KDC=100
+KIC=0.05
 
-MG "Test 1: 1000 cnt move (732 um)"
+' --- STEP 1: Home against negative limit ---
+DPC=0
+SPC=8000
+ACC=8000
+DCC=8000
+PRC=200
+BG C
+AM C
+JGC=-8000
+BG C
+AM C
+PR ,,200
+BG C
+AM C
+DPC=0
+MG "Homed at negative limit + 200 cnts."
+
+' --- STEP 2: Move to test position (200 mm from home) ---
+PAC=273066
+BG C
+AM C
+MG "At 200 mm. Mount DTI on + side, preload mid-range."
+MG "Test will resume in 30 seconds."
+WT 30000
+
+' --- STEP 3: Switch to slow test speeds ---
+SPC=5000
+ACC=10000
+DCC=10000
+
+' --- STEP 4: Robust backlash takeup ---
+btu=0
+#TAKEUP
+PRC=-1000
+BG C
+AM C
 PRC=1000
 BG C
 AM C
-MG "Pos=",_DPC
-WT 5000
+btu=btu+1
+JP #TAKEUP,btu<3
 
-MG "Test 2: 100 cnt move (73 um)"
-PRC=100
-BG C
-AM C
-MG "Pos=",_DPC
-WT 5000
+DPC=0
+WT 2000
+MG "DPC=0 set. Zero the DTI to mid-range now."
+WT 30000
 
-MG "Test 3: 10 cnt move (7.3 um)"
-PRC=10
-BG C
-AM C
-MG "Pos=",_DPC
-WT 5000
-
-MG "Test 4: 1 cnt move (0.73 um)"
+' --- STEP 5: 1-cnt steps x10 (cumulative 7.3 um) ---
+MG "10x 1-cnt steps (0.73 um each, 7.3 um cumulative)"
+i=0
+#S1
 PRC=1
 BG C
 AM C
-MG "Pos=",_DPC
-WT 5000
+WT 1500
+MG " step",i{F2.0}," _TPC=",_TPC{F6.0}," _TEC=",_TEC{F4.0},"  <- record DTI"
+WT 4000
+i=i+1
+JP #S1,i<10
 
-MG "Returning to start"
+' --- STEP 6: Single steps of increasing size ---
+MG "1x 5-cnt step (3.66 um, cum 11 um)"
+PRC=5
+BG C
+AM C
+WT 2000
+MG "  _TPC=",_TPC{F6.0}," <- record DTI"
+WT 6000
+
+MG "1x 14-cnt step (10.25 um, cum 21 um, ~1 DTI division)"
+PRC=14
+BG C
+AM C
+WT 2000
+MG "  _TPC=",_TPC{F6.0}," <- record DTI"
+WT 6000
+
+MG "1x 25-cnt step (18.31 um, cum 40 um)"
+PRC=25
+BG C
+AM C
+WT 2000
+MG "  _TPC=",_TPC{F6.0}," <- record DTI"
+WT 6000
+
+MG "1x 50-cnt step (36.62 um, cum 76 um)"
+PRC=50
+BG C
+AM C
+WT 2000
+MG "  _TPC=",_TPC{F6.0}," <- record DTI"
+WT 6000
+
+MG "1x 100-cnt step (73.24 um, cum 149 um)"
+PRC=100
+BG C
+AM C
+WT 2000
+MG "  _TPC=",_TPC{F6.0}," <- record DTI"
+WT 6000
+
+' --- STEP 7: Return to zero ---
+MG "Resolution test complete. Returning to zero."
+PAC=-100
+BG C
+AM C
 PAC=0
 BG C
 AM C

@@ -1,27 +1,181 @@
-' DEMO 3.9 - Stage axis accuracy
-' Stage: 6mm/rev, 8192 cpr => 0.7324 um/count
-' Commanded 1 full rev = 8192 counts = 6.000 mm
-' Measure with dial indicator or digital caliper
-' Compare _DPC to commanded
+' DEMO 3.9 - Stage axis position accuracy (full sequence)
+' Stage: KR3306A, 6mm lead, AKM21G 2048 PPR encoder => 8192 cnts/rev
+' Theoretical: 0.7324 um/count, 1365.33 cnts/mm, 34679.5 cnts/inch
+' Stroke: 500 mm. Test position = 150 mm from home = 204800 cnts.
+'
+' This script:
+'   1) Homes against negative limit, backs off 200 cnts, DPC=0
+'   2) Moves to test position (150 mm from home)
+'   3) Pauses 30 s for DTI mount + preload
+'   4) Backlash takeup (3x +/-1000 cnt cycles), redefines DPC=0
+'   5) Pauses 30 s for DTI zeroing (set DTI to 0 at mid-range)
+'   6) 2 warm-up cycles (no pause - settles screw nut, lubrication)
+'   7) 5 measurement cycles (pause 8 s for DTI reading at each target)
+'      Mean of readings = accuracy, std dev = repeatability per target
+'   8) Pauses 30 s for DTI removal, then Test 0 (lead verification, calipers)
+'
+' DTI mounting:
+'   - On + side of carriage, probe contacting carriage flat
+'   - DTI range = +/-200 um. Preload exactly mid-range (DTI reads 0)
+'     so we have 200 um of swing in either direction
+'   - + commanded move => carriage pushes into DTI => reading increases
+'   - Max DTI excursion in this test: +150 um (50 um headroom)
+'
+' Approach pattern: PAC=(target-100), PAC=target  -> always final +100 cnt
+'
+' Record: Cmd cnts | Cmd um | _TPC | DTI um | Error = DTI - Cmd
 
 #main
 MO C
 CN 1
 SH C
-KPC=10
-KDC=64
-KIC=0
-LDC=3
-ACC=500000
-DCC=500000
-SPC=40000
-DPC=0
+KPC=20
+KDC=100
+KIC=0.05
 
-PRC=8192
+
+' --- STEP 1: Home against negative limit ---
+DPC=0
+SPC=8000
+ACC=8000
+DCC=8000
+PRC = 200
+BG C
+AM C 
+JGC=-8000
+BG C
+AM C
+PR ,,200
+BG C
+AM C
+DPC=0
+MG "Homed at negative limit + 200 cnts."
+
+' --- STEP 2: Move to test position (150 mm from home) at production speed ---
+SPC=8000
+ACC=8000
+DCC=8000
+PAC=273066
+BG C
+AM C
+MG "At 200 mm. Mount DTI on + side, preload halfway."
+MG "Test will resume in 30 seconds."
+WT 30000
+
+' --- STEP 3: Switch to slow test speeds ---
+SPC=5000
+ACC=10000
+DCC=10000
+
+' Robust backlash takeup: 3 cycles of -1000/+1000 cnts
+' DTI will retract to its stop during the - moves (it's > 200 um)
+' That's fine - we zero the DTI AFTER takeup is complete
+btu=0
+#TAKEUP
+PRC=-1000
+BG C
+AM C
+PRC=1000
+BG C
+AM C
+btu=btu+1
+JP #TAKEUP,btu<3
+
+DPC=0
+WT 2000
+MG "DPC=0 set at 150 mm. Zero the DTI to mid-range now."
+WT 30000
+
+' --- STEP 4a: Warm-up cycles (no pause, exercises screw nut) ---
+MG "Warm-up: 2 cycles, do not record."
+nwarm=2
+cyc=0
+#WARMUP
+PAC=-32
+BG C
+AM C
+PAC=68
+BG C
+AM C
+PAC=37
+BG C
+AM C
+PAC=137
+BG C
+AM C
+PAC=105
+BG C
+AM C
+PAC=205
+BG C
+AM C
+PAC=-100
+BG C
+AM C
+PAC=0
+BG C
+AM C
+cyc=cyc+1
+JP #WARMUP,cyc<nwarm
+MG "Warm-up done. Begin recording."
+WT 3000
+
+' --- STEP 4b: Measurement cycles ---
+' Change ncyc to set number of measurement cycles
+ncyc=5
+cyc=0
+
+#REPEAT
+MG "=== Cycle ",cyc{F2.0}," of ",ncyc{F2.0}," ==="
+
+MG " A1: 50 um (68 cnts)"
+PAC=-32
+BG C
+AM C
+PAC=68
+BG C
+AM C
+WT 2000
+MG "  Cmd=68 _TPC=",_TPC{F8.0}," <- record DTI now"
+WT 6000
+
+MG " A2: 100 um (137 cnts)"
+PAC=37
+BG C
+AM C
+PAC=137
+BG C
+AM C
+WT 2000
+MG "  Cmd=137 _TPC=",_TPC{F8.0}," <- record DTI now"
+WT 6000
+
+MG " A3: 150 um (205 cnts)"
+PAC=105
+BG C
+AM C
+PAC=205
+BG C
+AM C
+WT 2000
+MG "  Cmd=205 _TPC=",_TPC{F8.0}," <- record DTI now"
+WT 6000
+
+' Return to zero from below (load + side) before next cycle
+PAC=-100
+BG C
+AM C
+PAC=0
 BG C
 AM C
 
-MG "Commanded=8192 cnts (6.0mm)  Actual=",_DPC
+cyc=cyc+1
+JP #REPEAT,cyc<ncyc
+
+MG "Test A complete (",ncyc{F2.0}," measurement cycles)"
+
+
+MG "All tests complete."
 
 MO C
 EN

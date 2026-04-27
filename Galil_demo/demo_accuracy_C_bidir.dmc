@@ -1,0 +1,74 @@
+' DEMO 3.9b - Bidirectional accuracy / backlash
+' Stage: KR3306A, 6mm lead, 8192 cnts/rev (0.7324 um/count)
+' Stage spec: backlash = 0.02 mm = 20 um = ~27 cnts
+'
+' SETUP same as demo_accuracy_C.dmc:
+'   - Homed, moved to 150 mm position
+'   - DTI mounted on + side of carriage, +/- 200 um range, zeroed mid-range
+'   - + commanded move = carriage into DTI = reading increases
+'
+' Method: target = 137 cnts (100 um)
+'   FWD approach: PAC=37,  PAC=137  -> final +100 cnt move (load + side)
+'   REV approach: PAC=237, PAC=137  -> final -100 cnt move (load - side)
+'   Max DTI excursion: +174 um (during reverse overshoot)
+'   Backlash = (DTI fwd reading) - (DTI rev reading) in um
+' 3 cycles for averaging.
+
+#main
+MO C
+CN 1
+SH C
+KPC=10
+KDC=64
+KIC=0
+LDC=3
+ACC=35000
+DCC=35000
+SPC=5000
+
+PRC=-100
+BG C
+AM C
+PRC=100
+BG C
+AM C
+DPC=0
+WT 2000
+MG "DPC=0 set. Zero the DTI."
+WT 8000
+
+count=0
+#LOOP
+MG "Cycle ",count{F2.0}," FWD approach (load + side)"
+PAC=37
+BG C
+AM C
+PAC=137
+BG C
+AM C
+MG " FWD _TPC=",_TPC{F8.0}
+WT 8000
+
+MG "Cycle ",count{F2.0}," REV approach (load - side)"
+PAC=237
+BG C
+AM C
+PAC=137
+BG C
+AM C
+MG " REV _TPC=",_TPC{F8.0}
+WT 8000
+
+count=count+1
+JP #LOOP,count<3
+
+PAC=237
+BG C
+AM C
+PAC=0
+BG C
+AM C
+MG "Bidirectional test complete. Backlash = avg(FWD - REV) in um."
+
+MO C
+EN

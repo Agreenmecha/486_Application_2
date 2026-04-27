@@ -1,0 +1,102 @@
+' DEMO 2.6 - A-axis repeatability of movements
+' Free-spinning motor, 8192 cnt/rev
+'
+' Goal:
+'   Repeat +1 revolution moves and verify the shaft lands on the same
+'   physical angle every time (camera + pointer flag), while logging encoder data.
+'
+' What to record each landing:
+'   - Set number, cycle number
+'   - _TPA (actual position counts)
+'   - _TEA (following error at landing)
+'   - Camera snapshot and pointer tip (x,y)
+'
+' Notes:
+'   - Keep camera fixed for the entire run.
+'   - Do not re-zero DPA between sets.
+
+#main
+MO A
+SH A
+
+' Servo gains (same style as your other tests)
+KPA=10
+KDA=64
+KIA=0.05
+LDA=3
+CN 1
+
+' ---------- User knobs ----------
+ncyc=10            ' cycles per set
+rev_cnt=8192       ' 1 rev command
+settle_ms=2000     ' settle before reading
+snap_ms=5000       ' time window to take snapshot/log (x,y)
+' -------------------------------
+
+DPA=0
+WT 500
+MG "A repeatability test: DPA=0 set at current orientation."
+MG "Confirm pointer and camera are ready. Test starts in 10 s."
+WT 10000
+
+' ============ SET 1: SLOW ============
+SPA=8000
+ACA=80000
+DCA=80000
+MG "=== SET 1/3 (slow): SPA=8000 ACA=DCA=80000 ==="
+
+cyc=0
+#S1
+PRA=rev_cnt
+BG A
+AM A
+WT settle_ms
+MG "SET=1 CYC=",cyc{F2.0}," CMD+=8192 _TPA=",_TPA{F10.0}," _TEA=",_TEA{F6.0}," <- snapshot + log tip (x,y)"
+WT snap_ms
+cyc=cyc+1
+JP #S1,cyc<ncyc
+
+MG "Set 1 complete. Set 2 starts in 6 s."
+WT 6000
+
+' ============ SET 2: MEDIUM ============
+SPA=40000
+ACA=400000
+DCA=400000
+MG "=== SET 2/3 (medium): SPA=40000 ACA=DCA=400000 ==="
+
+cyc=0
+#S2
+PRA=rev_cnt
+BG A
+AM A
+WT settle_ms
+MG "SET=2 CYC=",cyc{F2.0}," CMD+=8192 _TPA=",_TPA{F10.0}," _TEA=",_TEA{F6.0}," <- snapshot + log tip (x,y)"
+WT snap_ms
+cyc=cyc+1
+JP #S2,cyc<ncyc
+
+MG "Set 2 complete. Set 3 starts in 6 s."
+WT 6000
+
+' ============ SET 3: FAST ============
+SPA=160000
+ACA=2000000
+DCA=2000000
+MG "=== SET 3/3 (fast): SPA=160000 ACA=DCA=2000000 ==="
+
+cyc=0
+#S3
+PRA=rev_cnt
+BG A
+AM A
+WT settle_ms
+MG "SET=3 CYC=",cyc{F2.0}," CMD+=8192 _TPA=",_TPA{F10.0}," _TEA=",_TEA{F6.0}," <- snapshot + log tip (x,y)"
+WT snap_ms
+cyc=cyc+1
+JP #S3,cyc<ncyc
+
+MG "Repeatability run complete."
+MG "Total revolutions commanded: ",3*ncyc{F4.0}
+MO A
+EN

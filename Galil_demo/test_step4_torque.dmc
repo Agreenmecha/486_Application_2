@@ -22,6 +22,7 @@ JP #WAITPK,@ABS[_TTC]<TQLIM
 
 ST C
 AM C
+WT 10000
 
 ' Torque reached - move 1 rev positive (8192 counts/rev)
 PRC=1000

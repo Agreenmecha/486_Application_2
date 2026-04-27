@@ -1,26 +1,155 @@
-' DEMO 2.5 - Roller axis accuracy
-' Roller 1.5in dia, circumference = 4.712in
-' Commanded 1 full rev = 8192 counts = 4.712in linear on roller surface
-' Mark a line on the roller, run move, measure with caliper
-' Compare _DPA (actual encoder position) to commanded
+' DEMO 2.5 - A-axis (free-spinning) accuracy (display + measure)
+' Method: pointer flag on shaft, camera with centered crosshair + X/Y reticle
+'   - 8192 cnts/rev = 22.756 cnts/deg
+'   - 90 deg = 2048 cnts, 1 deg = 22.76 cnts
+'
+' Procedure:
+'   1. Mount flag on shaft. Center camera on shaft axis. Align flag to 12 o'clock (or any chosen 0 deg ref).
+'   2. Run script. DPA=0 sets the current orientation as 0 deg.
+'   3. Pass 1 (live, 90 deg increments): script visits 90, 180, 270, 360 deg, repeated for ncyc cycles.
+'      At each landing, _TPA and _TEA are logged and a 6 s window is given for camera snapshot.
+'   4. Pass 2 (post-process, varied angles): single cycle visiting 30, 45, 60, 120, 135, 225, 315 deg.
+'      Snapshot at each, measure angle in post from camera image (X/Y of flag tip vs center).
+'
+' Data to capture per landing:
+'   - Commanded angle (deg)
+'   - _TPA (actual encoder counts) -> convert to deg = _TPA * 360 / 8192
+'   - _TEA (following error in counts at landing)
+'   - Camera snapshot ID and pointer tip pixel (x,y)
+'   - Post-process angle from image: angle = atan2((y_tip-y_ctr),(x_tip-x_ctr)) [deg]
 
 #main
 MO A
 SH A
 KPA=10
 KDA=64
-KIA=0
+KIA=0.05
 LDA=3
-ACA=2000000
-DCA=2000000
-SPC=40000
-DPA=0
+CN 1
 
-PRA=8192
+' Test speeds: moderate, smooth trapezoid
+SPA=20000
+ACA=200000
+DCA=200000
+
+DPA=0
+WT 500
+MG "DPA=0 set. Flag is now reference 0 deg."
+MG "Verify camera centered on shaft, flag at chosen 0 deg, then test starts in 15 s."
+WT 15000
+
+' --- PASS 1: 90 deg increments, ncyc cycles (live measurement) ---
+ncyc=5
+cyc=0
+MG "=== PASS 1: 90 deg increments, ",ncyc{F2.0}," cycles ==="
+
+#P1
+base=cyc*8192
+MG "--- Cycle ",cyc{F2.0}," ---"
+
+PAA=base+2048
 BG A
 AM A
+WT 2000
+MG " 90 deg  cmd=",base+2048{F8.0}," _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
 
-MG "Commanded=8192  Actual=",_DPA
+PAA=base+4096
+BG A
+AM A
+WT 2000
+MG "180 deg  cmd=",base+4096{F8.0}," _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
 
+PAA=base+6144
+BG A
+AM A
+WT 2000
+MG "270 deg  cmd=",base+6144{F8.0}," _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+8192
+BG A
+AM A
+WT 2000
+MG "360 deg  cmd=",base+8192{F8.0}," _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+cyc=cyc+1
+JP #P1,cyc<ncyc
+
+MG "Pass 1 done. Pass 2 (varied angles) starts in 10 s."
+WT 10000
+
+' --- PASS 2: varied angles, 1 cycle (post-process from snapshots) ---
+' Counts for each target: deg * 8192 / 360 (rounded)
+'   30 deg  =  683
+'   45 deg  = 1024
+'   60 deg  = 1365
+'  120 deg  = 2731
+'  135 deg  = 3072
+'  225 deg  = 5120
+'  315 deg  = 7168
+'  360 deg  = 8192 (return to 0 deg orientation)
+base=ncyc*8192
+MG "=== PASS 2: varied angles (post-process) ==="
+
+PAA=base+683
+BG A
+AM A
+WT 2000
+MG " 30 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+1024
+BG A
+AM A
+WT 2000
+MG " 45 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+1365
+BG A
+AM A
+WT 2000
+MG " 60 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+2731
+BG A
+AM A
+WT 2000
+MG "120 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+3072
+BG A
+AM A
+WT 2000
+MG "135 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+5120
+BG A
+AM A
+WT 2000
+MG "225 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+7168
+BG A
+AM A
+WT 2000
+MG "315 deg  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+PAA=base+8192
+BG A
+AM A
+WT 2000
+MG "  0 deg (full rev)  _TPA=",_TPA{F8.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 6000
+
+MG "Test 2.5 complete."
 MO A
 EN

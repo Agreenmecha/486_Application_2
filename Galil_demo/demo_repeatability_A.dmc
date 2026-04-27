@@ -1,37 +1,94 @@
-' DEMO 2.6 - Roller axis repeatability
-' Runs 5 back-and-forth moves of 8192 counts each
-' After each forward move, 3 sec dwell for measurement
-' Mark the roller and measure landing position each cycle
-' Record scatter to quantify repeatability
+' DEMO 2.6 - A-axis (free-spinning) repeatability (measure)
+' Method: pointer flag on shaft, camera with center cursor + X/Y reticle
+'   - Each commanded +1 rev (8192 cnts) returns the flag to the same physical orientation.
+'   - Across N cycles at one parameter set, scatter in landing angle = repeatability.
+'   - Repeat with different (SPA, ACA, DCA) sets to test parameter sensitivity.
+'
+' Sets tested:
+'   Set 1 (slow):    SPA=8000   ACA=DCA=80000      (about 1 rev/s, gentle accel)
+'   Set 2 (medium):  SPA=40000  ACA=DCA=400000     (about 5 rev/s, moderate)
+'   Set 3 (fast):    SPA=160000 ACA=DCA=2000000    (about 20 rev/s, aggressive)
+'
+' At each landing, _TPA and _TEA are printed. Take a camera snapshot at each.
+' All landings within one set should overlay perfectly if encoder counts are intact.
+' Across sets, any change in landing angle indicates speed/accel-dependent error
+' (e.g. mechanical settling, controller bandwidth, commutation errors).
 
 #main
 MO A
 SH A
 KPA=10
 KDA=64
-KIA=0
+KIA=0.05
 LDA=3
-ACA=2000000
-DCA=2000000
-SPC=40000
-DPA=0
+CN 1
 
-count=0
-#LOOP
+DPA=0
+WT 500
+MG "DPA=0 set. Flag at reference 0 deg."
+MG "Test starts in 15 s."
+WT 15000
+
+ncyc=10
+
+' ============ SET 1: SLOW ============
+SPA=8000
+ACA=80000
+DCA=80000
+MG "=== SET 1 (slow): SPA=8000  ACA=DCA=80000 ==="
+
+cyc=0
+#L1
 PRA=8192
 BG A
 AM A
-MG "Fwd ",count,"  Pos=",_DPA
-WT 3000
+WT 1500
+MG " cyc",cyc{F2.0},"  _TPA=",_TPA{F9.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 5000
+cyc=cyc+1
+JP #L1,cyc<ncyc
 
-PRA=-8192
+MG "Set 1 done. Set 2 starts in 8 s."
+WT 8000
+
+' ============ SET 2: MEDIUM ============
+SPA=40000
+ACA=400000
+DCA=400000
+MG "=== SET 2 (medium): SPA=40000  ACA=DCA=400000 ==="
+
+cyc=0
+#L2
+PRA=8192
 BG A
 AM A
-MG "Rev ",count,"  Pos=",_DPA
-WT 2000
+WT 1500
+MG " cyc",cyc{F2.0},"  _TPA=",_TPA{F9.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 5000
+cyc=cyc+1
+JP #L2,cyc<ncyc
 
-count=count+1
-JP #LOOP,count<5
+MG "Set 2 done. Set 3 starts in 8 s."
+WT 8000
 
+' ============ SET 3: FAST ============
+SPA=160000
+ACA=2000000
+DCA=2000000
+MG "=== SET 3 (fast): SPA=160000  ACA=DCA=2000000 ==="
+
+cyc=0
+#L3
+PRA=8192
+BG A
+AM A
+WT 1500
+MG " cyc",cyc{F2.0},"  _TPA=",_TPA{F9.0}," _TEA=",_TEA{F4.0},"  <- snapshot + log tip (x,y)"
+WT 5000
+cyc=cyc+1
+JP #L3,cyc<ncyc
+
+totrev=3*ncyc
+MG "Test 2.6 complete. Total revs commanded: ",totrev{F3.0}
 MO A
 EN
